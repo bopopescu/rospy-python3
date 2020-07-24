@@ -231,7 +231,7 @@ def scoped_name(caller_id, name):
 ###################################################
 # Name validators      ############################
 
-#Technically XMLRPC will never send a None, but I don't want to code masterslave.py to be
+#Technically XMLRPC will never send a None, but I don't want to code mainsubordinate.py to be
 #XML-RPC specific in this way.
 
 def valid_name_validator_resolved(param_name, param_value, caller_id):

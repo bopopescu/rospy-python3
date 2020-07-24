@@ -30,9 +30,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# Revision $Id: masterslave.py 10462 2010-07-21 20:42:06Z kwc $
+# Revision $Id: mainsubordinate.py 10462 2010-07-21 20:42:06Z kwc $
 """
-Internal use: ROS Node (Slave) API. 
+Internal use: ROS Node (Subordinate) API. 
 
 The Node API is implemented by the L{ROSHandler}.
 
@@ -87,13 +87,13 @@ VAL = 2
 def is_publishers_list(paramName):
     return ('is_publishers_list', paramName)
 
-_logger = logging.getLogger("rospy.impl.masterslave")
+_logger = logging.getLogger("rospy.impl.mainsubordinate")
 
 LOG_API = True
 
 def apivalidate(error_return_value, validators=()):
     """
-    ROS master/slave arg-checking decorator. Applies the specified
+    ROS main/subordinate arg-checking decorator. Applies the specified
     validator to the corresponding argument and also remaps each
     argument to be the value returned by the validator.  Thus,
     arguments can be simultaneously validated and canonicalized prior
@@ -162,7 +162,7 @@ def apivalidate(error_return_value, validators=()):
 
 class ROSHandler(XmlRpcHandler):
     """
-    Base handler for both slave and master nodes. API methods
+    Base handler for both subordinate and main nodes. API methods
     generally provide the capability for establishing point-to-point
     connections with other nodes.
     
@@ -170,21 +170,21 @@ class ROSHandler(XmlRpcHandler):
     to what is added here. 
     """
     
-    def __init__(self, name, master_uri):
+    def __init__(self, name, main_uri):
         """
-        Base constructor for ROS nodes/masters
+        Base constructor for ROS nodes/mains
         @param name: ROS name of this node
         @type  name: str
-        @param master_uri: URI of master node, or None if this node is the master
-        @type  master_uri: str
+        @param main_uri: URI of main node, or None if this node is the main
+        @type  main_uri: str
         """
         super(ROSHandler, self).__init__()
-        self.masterUri = master_uri
+        self.mainUri = main_uri
         self.name = name
         self.uri = None
         self.done = False
 
-        # initialize protocol handlers. The master will not have any.
+        # initialize protocol handlers. The main will not have any.
         self.protocol_handlers = []
         handler = rospy.impl.tcpros.get_tcpros_handler()
         if handler is not None:
@@ -197,7 +197,7 @@ class ROSHandler(XmlRpcHandler):
 
     def _is_registered(self):
         """
-        @return: True if slave API is registered with master.
+        @return: True if subordinate API is registered with main.
         @rtype: bool
         """
         if self.reg_man is None:
@@ -216,7 +216,7 @@ class ROSHandler(XmlRpcHandler):
         self.uri = uri
         #connect up topics in separate thread
         if self.reg_man:
-            t = threading.Thread(target=self.reg_man.start, args=(uri, self.masterUri))
+            t = threading.Thread(target=self.reg_man.start, args=(uri, self.mainUri))
             rospy.core._add_shutdown_thread(t)
             t.start()
 
@@ -315,18 +315,18 @@ class ROSHandler(XmlRpcHandler):
         return 1, "bus info", get_topic_manager().get_pub_sub_info()
     
     @apivalidate('')
-    def getMasterUri(self, caller_id):
+    def getMainUri(self, caller_id):
         """
-        Get the URI of the master node.
+        Get the URI of the main node.
         @param caller_id: ROS caller id    
         @type  caller_id: str
-        @return: [code, msg, masterUri]
+        @return: [code, msg, mainUri]
         @rtype: [int, str, str]
         """
-        if self.masterUri:
-            return 1, self.masterUri, self.masterUri
+        if self.mainUri:
+            return 1, self.mainUri, self.mainUri
         else:
-            return 0, "master URI not set", ""
+            return 0, "main URI not set", ""
 
     def _shutdown(self, reason=''):
         """
@@ -455,7 +455,7 @@ class ROSHandler(XmlRpcHandler):
     @apivalidate(-1, (global_name('parameter_key'), None))
     def paramUpdate(self, caller_id, parameter_key, parameter_value):
         """
-        Callback from master of current publisher list for specified topic.
+        Callback from main of current publisher list for specified topic.
         @param caller_id: ROS caller id
         @type  caller_id: str
         @param parameter_key str: parameter name, globally resolved
@@ -475,7 +475,7 @@ class ROSHandler(XmlRpcHandler):
     @apivalidate(-1, (is_topic('topic'), is_publishers_list('publishers')))
     def publisherUpdate(self, caller_id, topic, publishers):
         """
-        Callback from master of current publisher list for specified topic.
+        Callback from main of current publisher list for specified topic.
         @param caller_id: ROS caller id
         @type  caller_id: str
         @param topic str: topic name

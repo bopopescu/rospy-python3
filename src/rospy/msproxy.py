@@ -32,9 +32,9 @@
 #
 # Revision $Id: msproxy.py 9434 2010-04-28 00:20:16Z kwc $
 """
-Master/Slave XML-RPC Wrappers.
+Main/Subordinate XML-RPC Wrappers.
 
-The L{NodeProxy} and L{MasterProxy} simplify usage of master/slave
+The L{NodeProxy} and L{MainProxy} simplify usage of main/subordinate
 APIs by automatically inserting the caller ID and also adding python
 dictionary accessors on the parameter server.
 """
@@ -44,7 +44,7 @@ import rospy.exceptions
 import rospy.names
 
 import rospy.impl.paramserver
-import rospy.impl.masterslave
+import rospy.impl.mainsubordinate
 
 class NodeProxy(object):
     """
@@ -58,7 +58,7 @@ class NodeProxy(object):
         
     def __getattr__(self, key): #forward api calls to target
         f = getattr(self.target, key)
-        remappings = rospy.impl.masterslave.ROSHandler.remappings(key)
+        remappings = rospy.impl.mainsubordinate.ROSHandler.remappings(key)
         def wrappedF(*args, **kwds):
             args = [rospy.names.get_caller_id(),]+list(args)
             #print "Remap indicies", remappings
@@ -69,7 +69,7 @@ class NodeProxy(object):
             return f(*args, **kwds)
         return wrappedF
 
-_master_arg_remap = { 
+_main_arg_remap = { 
     'deleteParam': [0], # remap key
     'setParam': [0], # remap key
     'getParam': [0], # remap key
@@ -88,32 +88,32 @@ _master_arg_remap = {
     'getPublishedTopics': [0], # remap subgraph
     }
     
-class MasterProxy(NodeProxy):
+class MainProxy(NodeProxy):
     """
-    Convenience wrapper for ROS master API and XML-RPC
-    implementation. The Master API methods can be invoked on this
+    Convenience wrapper for ROS main API and XML-RPC
+    implementation. The Main API methods can be invoked on this
     object and will be forwarded appropriately. Names in arguments
     will be remapped according to current node settings. Provides
     dictionary-like access to parameter server, e.g.::
     
-      master[key] = value
+      main[key] = value
 
     """
 
     def __init__(self, uri):
         """
-        Constructor for wrapping a remote master instance.
-        @param uri: XML-RPC URI of master
+        Constructor for wrapping a remote main instance.
+        @param uri: XML-RPC URI of main
         @type  uri: str
         """
-        super(MasterProxy, self).__init__(uri)
+        super(MainProxy, self).__init__(uri)
 
     def __getattr__(self, key): #forward api calls to target
         f = getattr(self.target, key)
-        if key in _master_arg_remap:
-            remappings = _master_arg_remap[key]
+        if key in _main_arg_remap:
+            remappings = _main_arg_remap[key]
         else:
-            remappings = rospy.impl.masterslave.ROSHandler.remappings(key)
+            remappings = rospy.impl.mainsubordinate.ROSHandler.remappings(key)
         def wrappedF(*args, **kwds):
             args = [rospy.names.get_caller_id(),]+list(args)
             #print "Remap indicies", remappings

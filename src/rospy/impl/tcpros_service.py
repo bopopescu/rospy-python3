@@ -90,7 +90,7 @@ def wait_for_service(service, timeout=None):
     @raise ROSInterruptException: if shutdown interrupts wait
     """
     def contact_service(resolved_name, timeout=10.0):
-        code, _, uri = master.lookupService(rospy.names.get_caller_id(), resolved_name)
+        code, _, uri = main.lookupService(rospy.names.get_caller_id(), resolved_name)
         if False and code == 1:
             return True
         elif True and code == 1:
@@ -113,7 +113,7 @@ def wait_for_service(service, timeout=None):
     if timeout == 0.:
         raise ValueError("timeout must be non-zero")
     resolved_name = rospy.names.resolve_name(service)
-    master = roslib.scriptutil.get_master()    
+    main = roslib.scriptutil.get_main()    
     first = False
     if timeout:
         timeout_t = time.time() + timeout
@@ -445,9 +445,9 @@ class ServiceProxy(_Service):
         if 1: #always do lookup for now, in the future we need to optimize
             try:
                 try:
-                    code, msg, self.uri = roslib.scriptutil.get_master().lookupService(rospy.names.get_caller_id(), self.resolved_name)
+                    code, msg, self.uri = roslib.scriptutil.get_main().lookupService(rospy.names.get_caller_id(), self.resolved_name)
                 except:
-                    raise ServiceException("unable to contact master")
+                    raise ServiceException("unable to contact main")
                 if code != 1:
                     logger.error("[%s]: lookup service failed with message [%s]", self.resolved_name, msg)
                     raise ServiceException("service [%s] unavailable"%self.resolved_name)
@@ -456,9 +456,9 @@ class ServiceProxy(_Service):
                 try:
                     rospy.core.parse_rosrpc_uri(self.uri)
                 except rospy.impl.validators.ParameterInvalid:
-                    raise ServiceException("master returned invalid ROSRPC URI: %s"%self.uri)
+                    raise ServiceException("main returned invalid ROSRPC URI: %s"%self.uri)
             except socket.error as e:
-                logger.error("[%s]: socket error contacting service, master is probably unavailable",self.resolved_name)
+                logger.error("[%s]: socket error contacting service, main is probably unavailable",self.resolved_name)
         return self.uri
 
     def call(self, *args, **kwds):
@@ -570,8 +570,8 @@ class ServiceImpl(_Service):
             #TODO: make service manager configurable            
             get_service_manager().unregister(self.resolved_name, self)
         except Exception as e:
-            logerr("Unable to unregister with master: "+traceback.format_exc())
-            raise ServiceException("Unable to connect to master: %s"%e)
+            logerr("Unable to unregister with main: "+traceback.format_exc())
+            raise ServiceException("Unable to connect to main: %s"%e)
 
     def spin(self):
         """

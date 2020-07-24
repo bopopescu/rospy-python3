@@ -100,7 +100,7 @@ class ServiceManager(object):
     
     def register(self, resolved_service_name, service):
         """
-        Register service with ServiceManager and ROS master
+        Register service with ServiceManager and ROS main
         @param resolved_service_name: name of service (resolved)
         @type  resolved_service_name: str
         @param service: Service to register
@@ -121,7 +121,7 @@ class ServiceManager(object):
         
     def unregister(self, resolved_service_name, service):
         """
-        Unregister service with L{ServiceManager} and ROS Master
+        Unregister service with L{ServiceManager} and ROS Main
         @param resolved_service_name: name of service
         @type  resolved_service_name: str
         @param service: service implementation

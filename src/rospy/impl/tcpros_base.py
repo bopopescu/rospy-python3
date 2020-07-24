@@ -82,7 +82,7 @@ def _is_use_tcp_keepalive():
     # in order to prevent circular dependencies, this does not use the
     # builtin libraries for interacting with the parameter server
     import roslib.rosenv
-    m = rospy.core.xmlrpcapi(roslib.rosenv.get_master_uri())
+    m = rospy.core.xmlrpcapi(roslib.rosenv.get_main_uri())
     code, msg, val = m.getParam(rospy.names.get_caller_id(), _PARAM_TCP_KEEPALIVE)
     _use_tcp_keepalive = val if code == 1 else True
     return _use_tcp_keepalive 

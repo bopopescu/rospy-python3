@@ -46,7 +46,7 @@ from rospy.names import _set_caller_id, get_namespace, get_caller_id, scoped_nam
 
 class ROSNode(roslib.xmlrpc.XmlRpcNode):
     """
-    Base ROS node, aka a slave node. Enables basic functionality for
+    Base ROS node, aka a subordinate node. Enables basic functionality for
     the connection of topics with other nodes.  ROSNode is initialized
     when the uri field has a value.
     """

@@ -222,7 +222,7 @@ def logfatal(msg, *args):
 #########################################################
 # CONSTANTS
 
-MASTER_NAME = "master" #master is a reserved node name for the central master
+MASTER_NAME = "main" #main is a reserved node name for the central main
 
 def get_ros_root(required=False, env=None):
     """

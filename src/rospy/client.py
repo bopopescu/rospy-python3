@@ -80,9 +80,9 @@ _rospy_to_logging_levels = {
 # hide rospy.impl.init implementation from users
 def get_node_proxy():
     """
-    Retrieve L{NodeProxy} for slave node running on this machine.
+    Retrieve L{NodeProxy} for subordinate node running on this machine.
 
-    @return: slave node API handle
+    @return: subordinate node API handle
     @rtype: L{rospy.NodeProxy}
     """
     return rospy.impl.init.get_node_proxy()
@@ -138,7 +138,7 @@ _init_node_args = None
 
 def init_node(name, argv=None, anonymous=False, log_level=INFO, disable_rostime=False, disable_rosout=False, disable_signals=False):
     """
-    Register client node with the master under the specified name.
+    Register client node with the main under the specified name.
     This MUST be called from the main Python thread unless
     disable_signals is set to True. Duplicate calls to init_node are
     only allowed if the arguments are identical as the side-effects of
@@ -248,13 +248,13 @@ def init_node(name, argv=None, anonymous=False, log_level=INFO, disable_rostime=
     logger = logging.getLogger("rospy.client")
     logger.info("init_node, name[%s], pid[%s]", resolved_node_name, os.getpid())
             
-    node = rospy.impl.init.start_node(os.environ, resolved_node_name) #node initialization blocks until registration with master
+    node = rospy.impl.init.start_node(os.environ, resolved_node_name) #node initialization blocks until registration with main
     
     timeout_t = time.time() + TIMEOUT_READY
     code = None
     while time.time() < timeout_t and code is None and not rospy.core.is_shutdown():
         try:
-            code, msg, master_uri = node.getMasterUri()
+            code, msg, main_uri = node.getMainUri()
         except:
             time.sleep(0.01) #poll for init
 
@@ -270,8 +270,8 @@ def init_node(name, argv=None, anonymous=False, log_level=INFO, disable_rostime=
         logger.error("ROS node initialization failed: unable to connect to local node") 
         raise rospy.exceptions.ROSInitException("ROS node initialization failed: unable to connect to local node")        
     elif code != 1:
-        logger.error("ROS node initialization failed: %s, %s, %s", code, msg, master_uri)
-        raise rospy.exceptions.ROSInitException("ROS node initialization failed: %s, %s, %s", code, msg, master_uri)
+        logger.error("ROS node initialization failed: %s, %s, %s", code, msg, main_uri)
+        raise rospy.exceptions.ROSInitException("ROS node initialization failed: %s, %s, %s", code, msg, main_uri)
 
     rospy.impl.rosout.load_rosout_handlers(log_level)
     if not disable_rosout:
@@ -283,38 +283,38 @@ def init_node(name, argv=None, anonymous=False, log_level=INFO, disable_rostime=
     else:
         rospy.rostime.set_rostime_initialized(True)
 
-#_master_proxy is a MasterProxy wrapper
-_master_proxy = None
+#_main_proxy is a MainProxy wrapper
+_main_proxy = None
 
-def get_master(env=os.environ):
+def get_main(env=os.environ):
     """
-    Get a remote handle to the ROS Master.
+    Get a remote handle to the ROS Main.
     This method can be called independent of running a ROS node,
     though the ROS_MASTER_URI must be declared in the environment.
 
-    @return: ROS Master remote object
-    @rtype: L{rospy.MasterProxy}
+    @return: ROS Main remote object
+    @rtype: L{rospy.MainProxy}
     @raise Exception: if server cannot be located or system cannot be
     initialized
     """
-    global _master_proxy
-    if _master_proxy is not None:
-        return _master_proxy
+    global _main_proxy
+    if _main_proxy is not None:
+        return _main_proxy
     import roslib.rosenv
-    _master_proxy = rospy.msproxy.MasterProxy(roslib.rosenv.get_master_uri())
-    return _master_proxy
+    _main_proxy = rospy.msproxy.MainProxy(roslib.rosenv.get_main_uri())
+    return _main_proxy
 
 #########################################################
 # Topic helpers
 
 def get_published_topics(namespace='/'):
     """
-    Retrieve list of topics that the master is reporting as being published.
+    Retrieve list of topics that the main is reporting as being published.
 
     @return: List of topic names and types: [[topic1, type1]...[topicN, typeN]]
     @rtype: [[str, str]]
     """
-    code, msg, val = get_master().getPublishedTopics(namespace)
+    code, msg, val = get_main().getPublishedTopics(namespace)
     if code != 1:
         raise rospy.exceptions.ROSException("unable to get published topics: %s"%msg)
     return val
@@ -375,7 +375,7 @@ def _init_param_server():
     """
     global _param_server
     if _param_server is None:
-        _param_server = get_master() #in the future param server will be a service
+        _param_server = get_main() #in the future param server will be a service
         
 # class and singleton to distinguish whether or not user has passed us a default value
 class _Unspecified(object): pass
@@ -393,7 +393,7 @@ def get_param(param_name, default=_unspecified):
     """
     try:
         _init_param_server()
-        return _param_server[param_name] #MasterProxy does all the magic for us
+        return _param_server[param_name] #MainProxy does all the magic for us
     except KeyError:
         if default != _unspecified:
             return default
@@ -408,7 +408,7 @@ def get_param_names():
     @raise ROSException: if parameter server reports an error
     """
     _init_param_server()
-    code, msg, val = _param_server.getParamNames() #MasterProxy does all the magic for us
+    code, msg, val = _param_server.getParamNames() #MainProxy does all the magic for us
     if code != 1:
         raise rospy.exceptions.ROSException("Unable to retrieve parameter names: %s"%msg)
     else:
@@ -429,7 +429,7 @@ def set_param(param_name, param_value):
         warnings.warn("'%s' is not a legal ROS graph resource name. This may cause problems with other ROS tools"%param_name, stacklevel=2)
 
     _init_param_server()
-    _param_server[param_name] = param_value #MasterProxy does all the magic for us
+    _param_server[param_name] = param_value #MainProxy does all the magic for us
 
 def search_param(param_name):
     """
@@ -452,7 +452,7 @@ def delete_param(param_name):
     @raise ROSException: if parameter server reports an error
     """    
     _init_param_server()
-    del _param_server[param_name] #MasterProxy does all the magic for us
+    del _param_server[param_name] #MainProxy does all the magic for us
 
 def has_param(param_name):
     """
@@ -462,7 +462,7 @@ def has_param(param_name):
     @raise ROSException: if parameter server reports an error
     """
     _init_param_server()
-    return param_name in _param_server #MasterProxy does all the magic for us
+    return param_name in _param_server #MainProxy does all the magic for us
 
 ################################################################################
 # Time helpers

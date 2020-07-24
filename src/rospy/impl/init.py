@@ -34,7 +34,7 @@
 """
 Internal use: rospy initialization.
 
-This is mainly routines for initializing the master or slave based on
+This is mainly routines for initializing the main or subordinate based on
 the OS environment.
 """
 
@@ -50,17 +50,17 @@ import rospy.names
 
 import rospy.impl.tcpros 
 import rospy.impl.msnode 
-import rospy.impl.masterslave 
+import rospy.impl.mainsubordinate 
 
 DEFAULT_NODE_PORT = 0 #bind to any open port
-DEFAULT_MASTER_PORT=11311 #default port for master's to bind to
+DEFAULT_MASTER_PORT=11311 #default port for main's to bind to
 
 _node = None #global var for ros init and easy interpreter access 
 def get_node_proxy():
     """
-    Retrieve L{NodeProxy} for slave node running on this machine.
+    Retrieve L{NodeProxy} for subordinate node running on this machine.
 
-    @return: slave node API handle
+    @return: subordinate node API handle
     @rtype: L{rospy.NodeProxy}
     """
     return _node
@@ -68,45 +68,45 @@ def get_node_proxy():
 ###################################################
 # rospy module lower-level initialization
 
-def default_master_uri():
+def default_main_uri():
     """
-    @return: URI of master that will be used if master is not otherwise configured.
+    @return: URI of main that will be used if main is not otherwise configured.
     @rtype: str
     """
     return 'http://localhost:%s/'%DEFAULT_MASTER_PORT
 
-def _sub_start_node(environ, resolved_name, master_uri=None, port=DEFAULT_NODE_PORT):
+def _sub_start_node(environ, resolved_name, main_uri=None, port=DEFAULT_NODE_PORT):
     """
     Subroutine for X{start_node()}
     """
-    if not master_uri:
-        master_uri = roslib.rosenv.get_master_uri()
-    if not master_uri:
-        master_uri = default_master_uri()
+    if not main_uri:
+        main_uri = roslib.rosenv.get_main_uri()
+    if not main_uri:
+        main_uri = default_main_uri()
 
-    handler = rospy.impl.masterslave.ROSHandler(resolved_name, master_uri)
+    handler = rospy.impl.mainsubordinate.ROSHandler(resolved_name, main_uri)
     node = rospy.impl.msnode.ROSNode(resolved_name, port, handler)
     node.start()
     while not node.uri and not rospy.core.is_shutdown():
         time.sleep(0.00001) #poll for XMLRPC init
-    logging.getLogger("rospy.init").info("ROS Slave URI: [%s]", node.uri)
+    logging.getLogger("rospy.init").info("ROS Subordinate URI: [%s]", node.uri)
 
     while not handler._is_registered() and not rospy.core.is_shutdown():
-        time.sleep(0.1) #poll for master registration
-    logging.getLogger("rospy.init").info("registered with master")
+        time.sleep(0.1) #poll for main registration
+    logging.getLogger("rospy.init").info("registered with main")
 
     return rospy.msproxy.NodeProxy(node.uri)
 
-def start_node(environ, resolved_name, master_uri=None, port=None):
+def start_node(environ, resolved_name, main_uri=None, port=None):
     """
-    Load ROS slave node, initialize from environment variables
+    Load ROS subordinate node, initialize from environment variables
     @param environ: environment variables
     @type  environ: dict
     @param resolved_name: resolved node name
     @type  resolved_name: str
-    @param master_uri: override ROS_MASTER_URI: XMlRPC URI of central ROS server
-    @type  master_uri: str
-    @param port: override ROS_PORT: port of slave xml-rpc node
+    @param main_uri: override ROS_MASTER_URI: XMlRPC URI of central ROS server
+    @type  main_uri: str
+    @param port: override ROS_PORT: port of subordinate xml-rpc node
     @type  port: int
     @return: node proxy instance
     @rtype rospy.msproxy.NodeProxy
@@ -114,7 +114,7 @@ def start_node(environ, resolved_name, master_uri=None, port=None):
     global _node
     rospy.impl.tcpros.init_tcpros()
     if _node is not None:
-        raise Exception("Only one master/slave can be run per instance (multiple calls to start_node)")
-    _node = _sub_start_node(environ, resolved_name, master_uri, port)
+        raise Exception("Only one main/subordinate can be run per instance (multiple calls to start_node)")
+    _node = _sub_start_node(environ, resolved_name, main_uri, port)
     return _node
     
